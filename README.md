@@ -1,5 +1,5 @@
 <h1 align="center">
-# Stock Assets API
+Stock Assets API
 </h1>
 
 <p align="center">
