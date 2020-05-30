@@ -8,6 +8,7 @@ import pandas
 import numpy as np
 from datetime import datetime, timedelta
 from config import DevelopmentConfig
+from flask_apscheduler import APScheduler
 import schedule
 import time
 import json
@@ -17,6 +18,7 @@ import json
 load_dotenv()
 
 app = Flask(__name__)
+scheduler = APScheduler()
 # api = Api(app)
 
 app.config.from_object("config.DevelopmentConfig")
@@ -134,8 +136,8 @@ def update_prices(ticker):
 
 
 def update_db():
-    """Updates all tickers every 30 seconds"""
-
+    """Updates all tickers"""
+    print('scheduled starting....')
     for t in TICKER_SYMBOLS:
         update_prices(t)
 
@@ -157,12 +159,6 @@ def home():
 @app.route('/assets', methods=['GET'])
 def get_assets():
     """Return response of assets to user."""
-
-    schedule.every(15).seconds.do(update_db())
-
-    while 1:
-        schedule.run_pending()
-        time.sleep(1)
 
     stocks = Stock.query.all()
 
@@ -187,5 +183,9 @@ def serialize(s):
         }
     }
 
-# if __name__ == "__main__":
-#     app.run()
+
+if __name__ == "__main__":
+    scheduler.add_job(id='Scheduled task', func=update_db,
+                      trigger='interval', seconds=45)
+    scheduler.start()
+    app.run()
