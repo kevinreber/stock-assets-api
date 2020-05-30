@@ -36,5 +36,10 @@ $ source venv/bin/activate
 ```
 Open http://localhost:5000/ to view project in the browser.
 
+## Built With
+* [Flask](https://flask.palletsprojects.com/en/1.1.x/)
+* [Flask SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/en/2.x/)
+* [PostgresSQL](https://www.postgresql.org/)
+
 ## Hosted on 
 [Heroku](https://www.heroku.com/)
