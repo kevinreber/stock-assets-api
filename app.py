@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from flask_restful import Resource, Api
+# from flask_restful import Resource, Api
 from models import db, connect_db, Stock
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
@@ -10,13 +10,14 @@ from datetime import datetime, timedelta
 from config import DevelopmentConfig
 import schedule
 import time
+import json
 
 
 # load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-api = Api(app)
+# api = Api(app)
 
 app.config.from_object("config.DevelopmentConfig")
 # debug = DebugToolbarExtension(app)
@@ -28,24 +29,25 @@ DAILY = str((datetime.now() - timedelta(2)).strftime('%Y-%m-%d'))
 WEEKLY = str((datetime.now() - timedelta(7)).strftime('%Y-%m-%d'))
 ANNUAL = str((datetime.now() - timedelta(365)).strftime('%Y-%m-%d'))
 
-TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND", "TSLA"]
+# TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND", "TSLA"]
+TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND"]
 
 
-class Assets(Resource):
-    def get(self):
-        """Return response of assets to user."""
+# class Assets(Resource):
+#     def get(self):
+#         """Return response of assets to user."""
 
-        tickers = Stock.query.all()
+#         tickers = Stock.query.all()
 
-        # Store all prices of stocks
-        stocks = {t: get_stock(t) for t in tickers}
-        data = stocks
-        return (data, 201)
+#         # Store all prices of stocks
+#         stocks = {t: get_stock(t) for t in tickers}
+#         data = stocks
+#         return (data, 201)
 
 
 def get_stock(ticker):
 
-    stock = Stock.query.get_or_404(ticker)
+    stock = Stock.query.get(ticker)
 
     changes = {
         "daily": stock.daily_perc_change,
@@ -55,7 +57,7 @@ def get_stock(ticker):
 
     price_data = {
         "price": stock.price,
-        "dailyPriceChange": stock.dailyPriceChange,
+        "dailyPriceChange": stock.daily_price_change,
         "priceChangePercentages": changes
     }
 
@@ -93,36 +95,42 @@ def update_prices(ticker):
     will return:
         [Timestamp('2020-05-29 00:00:00'), 2442.3701171875]
     """
+    print(get_data(ticker, TODAY, TODAY))
+    today_price = get_data(ticker, TODAY, TODAY)["Close"][0]
+    daily_price = get_data(ticker, DAILY, TODAY)["Close"][0]
+    weekly_price = get_data(ticker, WEEKLY, TODAY)["Close"][0]
+    annual_price = get_data(ticker, ANNUAL, TODAY)["Close"][0]
 
     stock = Stock.query.get(ticker)
 
-    today_price = get_data(ticker, TODAY, TODAY)["Close"][1]
-    daily_price = get_data(ticker, DAILY, TODAY)["Close"][1]
-    weekly_price = get_data(ticker, WEEKLY, TODAY)["Close"][1]
-    annual_price = get_data(ticker, ANNUAL, TODAY)["Close"][1]
+    if stock:
+        print('updating....')
 
-    if not stock:
-        stock = Stock(ticker=ticker,
-                      price=float(today_price - daily_price),
-                      daily_price_change=percent_change(
-                          today_price, daily_price),
-                      daily_perc_change=percent_change(
-                          today_price, daily_price),
-                      weekly_perc_change=percent_change(
-                          today_price, weekly_price),
-                      annual_perc_change=percent_change(
-                          today_price, annual_price)
-                      )
-        db.session.add(stock)
-
-    else:
         stock.price = today_price
         stock.daily_price_change = float(today_price - daily_price)
         stock.daily_perc_change = percent_change(today_price, daily_price)
         stock.weekly_perc_change = percent_change(today_price, weekly_price)
         stock.annual_perc_change = percent_change(today_price, annual_price)
+        print(stock)
+
+        print('updated!')
+
+    else:
+        print('new stock....')
+        new_stock = Stock(id=ticker,
+                          price=today_price,
+                          daily_price_change=today_price - daily_price,
+                          daily_perc_change=percent_change(
+                              today_price, daily_price),
+                          weekly_perc_change=percent_change(
+                              today_price, weekly_price),
+                          annual_perc_change=percent_change(today_price, annual_price))
+        db.session.add(new_stock)
+        print(new_stock)
+        print('added!')
 
     db.session.commit()
+    print(f'{ticker} updated!')
 
 
 def update_db():
@@ -132,28 +140,52 @@ def update_db():
         update_prices(t)
 
 
-def print_this():
-    print("hello world")
-
-
 @app.route("/")
 def home():
     """Empty"""
 
-    schedule.every(30).seconds.do(update_db())
+    # schedule.every(45).seconds.do(update_db())
+
+    # while 1:
+    #     schedule.run_pending()
+    #     time.sleep(1)
+
+    update_db()
+    return 'Hello World!'
+
+
+@app.route('/assets', methods=['GET'])
+def get_assets():
+    """Return response of assets to user."""
+
+    schedule.every(15).seconds.do(update_db())
 
     while 1:
         schedule.run_pending()
         time.sleep(1)
 
-    return 'Hello World!'
+    stocks = Stock.query.all()
+
+    print(stocks)
+    ser_stocks = {s.id: serialize(s) for s in stocks}
+
+    return (jsonify(data=ser_stocks))
 
 
-# @app.route('/assets', methods=['GET'])
-# def get_assets():
-#     """Return response of assets to user."""
+def serialize(s):
+    """Serializes data"""
 
-#     # Store all prices of stocks
-#     stocks = {t: get_prices(t) for t in TICKER_SYMBOLS}
+    return {
+        'prices': {
+            'price': s.price,
+            'dailyChange': s.daily_price_change,
+        },
+        'percentChanges': {
+            'dailyChange': s.daily_perc_change,
+            'weeklyChange': s.weekly_perc_change,
+            'annualChange': s.annual_perc_change
+        }
+    }
 
-#     return (jsonify(stocks=stocks), 201)
+# if __name__ == "__main__":
+#     app.run()

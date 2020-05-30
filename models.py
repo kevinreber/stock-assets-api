@@ -16,9 +16,9 @@ class Stock(db.Model):
 
     __tablename__ = "stocks"
 
-    ticker = db.Column(db.String, primary_key=True, nullable=False)
-    price = db.Column(db.String, nullable=False)
-    daily_price_change = db.Column(db.String, nullable=False)
-    daily_perc_change = db.Column(db.Integer, nullable=False)
-    weekly_perc_change = db.Column(db.Integer, nullable=False)
-    annual_perc_change = db.Column(db.Integer, nullable=False)
+    id = db.Column(db.String, primary_key=True, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    daily_price_change = db.Column(db.Float, nullable=False)
+    daily_perc_change = db.Column(db.Float, nullable=False)
+    weekly_perc_change = db.Column(db.Float, nullable=False)
+    annual_perc_change = db.Column(db.Float, nullable=False)
