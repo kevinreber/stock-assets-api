@@ -1,12 +1,11 @@
-from flask import Blueprint, jsonify, request
+from flask import Flask, jsonify, request
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-# Define assets Blueprint
-assets = Blueprint('assets', __name__)
+app = Flask(__name__)
 
 TODAY = str(datetime.now().strftime('%Y-%m-%d'))
 DAILY = str((datetime.now() - timedelta(2)).strftime('%Y-%m-%d'))
@@ -69,7 +68,14 @@ def get_prices(ticker):
     return price_data
 
 
-@assets.route('/assets', methods=['GET'])
+@app.route("/")
+def home():
+    """Empty"""
+
+    return 'Hello World!'
+
+
+@app.route('/assets', methods=['GET'])
 def get_assets():
     """Return response of assets to user."""
 
@@ -77,3 +83,7 @@ def get_assets():
     stocks = {t: get_prices(t) for t in TICKER_SYMBOLS}
 
     return (jsonify(stocks=stocks), 201)
+
+
+if __name__ == '__main__':
+    app.run()
