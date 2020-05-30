@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_restful import Resource, Api
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
-import pandas as pd
+import pandas
 import numpy as np
 from datetime import datetime, timedelta
 
@@ -56,8 +56,7 @@ def get_prices(ticker):
         get_data(USA_STOCK)["Close"]
 
     will return:
-        {Timestamp('2020-05-29 00:00:00'): 2442.3701171875}
-
+        [Timestamp('2020-05-29 00:00:00'), 2442.3701171875]
     """
 
     today_price = get_data(ticker, TODAY, TODAY)["Close"][1]
