@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_restful import Resource, Api
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
 import pandas as pd
@@ -6,6 +7,7 @@ import numpy as np
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+api = Api(app)
 
 TODAY = str(datetime.now().strftime('%Y-%m-%d'))
 DAILY = str((datetime.now() - timedelta(2)).strftime('%Y-%m-%d'))
@@ -13,6 +15,16 @@ WEEKLY = str((datetime.now() - timedelta(7)).strftime('%Y-%m-%d'))
 ANNUAL = str((datetime.now() - timedelta(365)).strftime('%Y-%m-%d'))
 
 TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND", "TSLA"]
+
+
+class Assets(Resource):
+    def get(self):
+        """Return response of assets to user."""
+
+        # Store all prices of stocks
+        stocks = {t: get_prices(t) for t in TICKER_SYMBOLS}
+        data = stocks
+        return (data, 201)
 
 
 def get_data(ticker, start, end):
@@ -75,15 +87,17 @@ def home():
     return 'Hello World!'
 
 
-@app.route('/assets', methods=['GET'])
-def get_assets():
-    """Return response of assets to user."""
+# @app.route('/assets', methods=['GET'])
+# def get_assets():
+#     """Return response of assets to user."""
 
-    # Store all prices of stocks
-    stocks = {t: get_prices(t) for t in TICKER_SYMBOLS}
+#     # Store all prices of stocks
+#     stocks = {t: get_prices(t) for t in TICKER_SYMBOLS}
 
-    return (jsonify(stocks=stocks), 201)
+#     return (jsonify(stocks=stocks), 201)
 
+
+api.add_resource(Assets, "/assets")
 
 if __name__ == '__main__':
     app.run()
