@@ -3,6 +3,7 @@ from models import db, connect_db, Stock
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
 from dotenv import load_dotenv
+from flask_cors import CORS
 import pandas
 import numpy as np
 from datetime import datetime, timedelta
@@ -17,6 +18,7 @@ import json
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)
 scheduler = APScheduler()
 
 app.config.from_object("config.BaseConfig")
