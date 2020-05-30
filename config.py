@@ -13,9 +13,6 @@ class BaseConfig(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
 
-
-class DevelopmentConfig(BaseConfig):
-    """Development configuration."""
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL', 'postgresql:///assets-portfolio')
     DEBUG_TB_ENABLED = False

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import pandas
 import numpy as np
 from datetime import datetime, timedelta
-from config import DevelopmentConfig
+from config import BaseConfig
 from flask_apscheduler import APScheduler
 import schedule
 import time
@@ -19,10 +19,8 @@ load_dotenv()
 
 app = Flask(__name__)
 scheduler = APScheduler()
-# api = Api(app)
 
-app.config.from_object("config.DevelopmentConfig")
-# debug = DebugToolbarExtension(app)
+app.config.from_object("config.BaseConfig")
 
 connect_db(app)
 
@@ -33,18 +31,6 @@ ANNUAL = str((datetime.now() - timedelta(365)).strftime('%Y-%m-%d'))
 
 # TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND", "TSLA"]
 TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND"]
-
-
-# class Assets(Resource):
-#     def get(self):
-#         """Return response of assets to user."""
-
-#         tickers = Stock.query.all()
-
-#         # Store all prices of stocks
-#         stocks = {t: get_stock(t) for t in tickers}
-#         data = stocks
-#         return (data, 201)
 
 
 def get_stock(ticker):
@@ -97,7 +83,7 @@ def update_prices(ticker):
     will return:
         [Timestamp('2020-05-29 00:00:00'), 2442.3701171875]
     """
-    print(get_data(ticker, TODAY, TODAY))
+
     today_price = get_data(ticker, TODAY, TODAY)["Close"][0]
     daily_price = get_data(ticker, DAILY, TODAY)["Close"][0]
     weekly_price = get_data(ticker, WEEKLY, TODAY)["Close"][0]
@@ -106,19 +92,13 @@ def update_prices(ticker):
     stock = Stock.query.get(ticker)
 
     if stock:
-        print('updating....')
-
         stock.price = today_price
         stock.daily_price_change = float(today_price - daily_price)
         stock.daily_perc_change = percent_change(today_price, daily_price)
         stock.weekly_perc_change = percent_change(today_price, weekly_price)
         stock.annual_perc_change = percent_change(today_price, annual_price)
-        print(stock)
-
-        print('updated!')
 
     else:
-        print('new stock....')
         new_stock = Stock(id=ticker,
                           price=today_price,
                           daily_price_change=today_price - daily_price,
@@ -128,8 +108,6 @@ def update_prices(ticker):
                               today_price, weekly_price),
                           annual_perc_change=percent_change(today_price, annual_price))
         db.session.add(new_stock)
-        print(new_stock)
-        print('added!')
 
     db.session.commit()
     print(f'{ticker} updated!')
@@ -137,7 +115,7 @@ def update_prices(ticker):
 
 def update_db():
     """Updates all tickers"""
-    print('scheduled starting....')
+
     for t in TICKER_SYMBOLS:
         update_prices(t)
 
@@ -145,12 +123,6 @@ def update_db():
 @app.route("/")
 def home():
     """Empty"""
-
-    # schedule.every(45).seconds.do(update_db())
-
-    # while 1:
-    #     schedule.run_pending()
-    #     time.sleep(1)
 
     update_db()
     return 'Hello World!'
@@ -162,7 +134,6 @@ def get_assets():
 
     stocks = Stock.query.all()
 
-    print(stocks)
     ser_stocks = {s.id: serialize(s) for s in stocks}
 
     return (jsonify(data=ser_stocks))
@@ -186,6 +157,6 @@ def serialize(s):
 
 if __name__ == "__main__":
     scheduler.add_job(id='Scheduled task', func=update_db,
-                      trigger='interval', seconds=45)
+                      trigger='interval', seconds=30)
     scheduler.start()
     app.run()
