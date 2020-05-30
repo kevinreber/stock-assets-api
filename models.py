@@ -21,4 +21,4 @@ class Stock(db.Model):
     daily_price_change = db.Column(db.String, nullable=False)
     daily_perc_change = db.Column(db.Integer, nullable=False)
     weekly_perc_change = db.Column(db.Integer, nullable=False)
-    monthly_perc_change = db.Column(db.Integer, nullable=False)
+    annual_perc_change = db.Column(db.Integer, nullable=False)
