@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, request
-# from flask_restful import Resource, Api
 from models import db, connect_db, Stock
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
@@ -34,6 +33,7 @@ TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND"]
 
 
 def get_stock(ticker):
+    """Get stock from DB"""
 
     stock = Stock.query.get(ticker)
 
@@ -72,7 +72,7 @@ def percent_change(current, start):
 
 def update_prices(ticker):
     """
-    Returns price of ticker symbol.
+    Returns price and price changes of ticker symbol.
 
     get_data() will return a nested dict of the ticker symbols's dataframe.
     Storing the tickers's ["Close"] key will give us the closing price of the stock.
@@ -122,7 +122,7 @@ def update_db():
 
 @app.route("/")
 def home():
-    """Empty"""
+    """Home Page, keep empty"""
 
     update_db()
     return 'Hello World!'
@@ -133,7 +133,6 @@ def get_assets():
     """Return response of assets to user."""
 
     stocks = Stock.query.all()
-
     ser_stocks = {s.id: serialize(s) for s in stocks}
 
     return (jsonify(data=ser_stocks))
@@ -155,6 +154,7 @@ def serialize(s):
     }
 
 
+# Set schedule task to run every 30 seconds
 if __name__ == "__main__":
     scheduler.add_job(id='Scheduled task', func=update_db,
                       trigger='interval', seconds=30)
