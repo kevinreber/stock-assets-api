@@ -37,19 +37,24 @@ def get_data(ticker, start, end):
     except RemoteDataError:
         print("No data found for {t}".format(t=ticker))
 
+
+def percent_change(current, start):
+    """Returns percentage change"""
+
+    return ((float(current)-start) / abs(start)) * 100
+
 # def get_stats(stock_data):
 #     return {
 
 #     }
 
 
-def clean_data(stock_data, col):
-    weekdays = pd.date_range(start=TODAY, end=TODAY)
-    clean_data = stock_data[col].reindex(weekdays)
-    return clean_data.fillna(method='ffill')
+# def clean_data(stock_data, col):
+#     weekdays = pd.date_range(start=TODAY, end=TODAY)
+#     clean_data = stock_data[col].reindex(weekdays)
+#     return clean_data.fillna(method='ffill')
 
-
-def get_price(ticker):
+def get_prices(ticker):
     """
     Return price of ticker symbol.
 
@@ -64,25 +69,49 @@ def get_price(ticker):
 
     """
 
-    price = round(list(get_data(ticker, TODAY, TODAY)["Close"].values())[0], 2)
-    print(price)
-    return price
+    # today_price = [get_data(t, TODAY, TODAY) for t in TICKER_SYMBOLS]
+    # change_daily = [get_data(t, DAILY, TODAY) for t in TICKER_SYMBOLS]
+    # change_weekly = [get_data(t, WEEKLY, TODAY) for t in TICKER_SYMBOLS]
+    # change_annual = [get_data(t, ANNUAL, TODAY) for t in TICKER_SYMBOLS]
+
+    # today_price = list(get_data(ticker, TODAY, TODAY)["Close"].values())[0]
+    # daily_price = list(get_data(ticker, DAILY, TODAY)["Close"].values())[0]
+    # weekly_price = list(get_data(ticker, WEEKLY, TODAY)["Close"].values())[0]
+    # annual_price = list(get_data(ticker, ANNUAL, TODAY)["Close"].values())[0]
+
+    today_price = get_data(ticker, TODAY, TODAY)["Close"][1]
+    daily_price = get_data(ticker, DAILY, TODAY)["Close"][1]
+    weekly_price = get_data(ticker, WEEKLY, TODAY)["Close"][1]
+    annual_price = get_data(ticker, ANNUAL, TODAY)["Close"][1]
+
+    # print(today_price)
+    # print(daily_price)
+    # print(weekly_price)
+    # print(annual_price)
+
+    changes = {
+        "daily": percent_change(today_price, daily_price),
+        "weekly": percent_change(today_price, weekly_price),
+        "annual": percent_change(today_price, annual_price)
+    }
+
+    price_data = {
+        "price": float(today_price),
+        "changes": changes
+    }
+
+    return price_data
 
 
 @assets.route('/assets', methods=['GET'])
 def get_assets():
     """Return response of assets to user."""
 
-    data = request.get_json()
-
-    # today_price = [get_data(t, TODAY, TODAY) for t in TICKER_SYMBOLS]
-    # change_daily = [get_data(t, DAILY, TODAY) for t in TICKER_SYMBOLS]
-    # change_weekly = [get_data(t, WEEKLY, TODAY) for t in TICKER_SYMBOLS]
-    # change_annual = [get_data(t, ANNUAL, TODAY) for t in TICKER_SYMBOLS]
+    # data = request.get_json()
 
     # print(today_price, daily_weekly, change_weekly, annual_weekly)
 
     # Store all prices of stocks
-    stocks = {t: get_price(t) for t in TICKER_SYMBOLS}
+    stocks = {t: get_prices(t) for t in TICKER_SYMBOLS}
 
     return stocks
