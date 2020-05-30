@@ -1,13 +1,24 @@
 from flask import Flask, jsonify, request
 from flask_restful import Resource, Api
+from models import Stock
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
+from dotenv import load_dotenv
 import pandas
 import numpy as np
 from datetime import datetime, timedelta
+from config import DevelopmentConfig
+
+# load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 api = Api(app)
+
+app.config.from_object("config.DevelopmentConfig")
+# debug = DebugToolbarExtension(app)
+
+connect_db(app)
 
 TODAY = str(datetime.now().strftime('%Y-%m-%d'))
 DAILY = str((datetime.now() - timedelta(2)).strftime('%Y-%m-%d'))
@@ -59,24 +70,34 @@ def get_prices(ticker):
         [Timestamp('2020-05-29 00:00:00'), 2442.3701171875]
     """
 
+    stock = Stock.query.get_or404(ticker)
+
     today_price = get_data(ticker, TODAY, TODAY)["Close"][1]
     daily_price = get_data(ticker, DAILY, TODAY)["Close"][1]
     weekly_price = get_data(ticker, WEEKLY, TODAY)["Close"][1]
     annual_price = get_data(ticker, ANNUAL, TODAY)["Close"][1]
 
-    changes = {
-        "daily": percent_change(today_price, daily_price),
-        "weekly": percent_change(today_price, weekly_price),
-        "annual": percent_change(today_price, annual_price)
-    }
+    stock.price = today_price
+    stock.daily_price_change = float(today_price - daily_price)
+    stock.daily_perc_change = percent_change(today_price, daily_price)
+    stock.weekly_perc_change = percent_change(today_price, weekly_price)
+    stock.annual_perc_change = percent_change(today_price, annual_price)
 
-    price_data = {
-        "price": float(today_price),
-        "dailyPriceChange": float(today_price - daily_price),
-        "priceChangePercentages": changes
-    }
+    db.session.commit()
 
-    return price_data
+    # changes = {
+    #     "daily": percent_change(today_price, daily_price),
+    #     "weekly": percent_change(today_price, weekly_price),
+    #     "annual": percent_change(today_price, annual_price)
+    # }
+
+    # price_data = {
+    #     "price": float(today_price),
+    #     "dailyPriceChange": float(today_price - daily_price),
+    #     "priceChangePercentages": changes
+    # }
+
+    # return price_data
 
 
 @app.route("/")
