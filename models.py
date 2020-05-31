@@ -11,14 +11,16 @@ def connect_db(app):
     db.init_app(app)
 
 
-class Stock(db.Model):
-    """Stock Model"""
+class Asset(db.Model):
+    """Asset Model"""
 
-    __tablename__ = "stocks"
+    __tablename__ = "assets"
 
     id = db.Column(db.String, primary_key=True, nullable=False)
+    asset = db.Column(db.String, nullable=False)
     price = db.Column(db.Float, nullable=False)
     daily_price_change = db.Column(db.Float, nullable=False)
     daily_perc_change = db.Column(db.Float, nullable=False)
     weekly_perc_change = db.Column(db.Float, nullable=False)
+    monthly_perc_change = db.Column(db.Float, nullable=False)
     annual_perc_change = db.Column(db.Float, nullable=False)
