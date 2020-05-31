@@ -1,30 +1,32 @@
+# Python standard libraries
+from datetime import datetime, timedelta
+
+# Third-party libraries
 from flask import Flask, jsonify, request
-from models import db, connect_db, Asset
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
 from dotenv import load_dotenv
 from flask_cors import CORS
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-from config import BaseConfig
 from flask_apscheduler import APScheduler
-import schedule
-import time
-import json
 from forex_python.bitcoin import BtcConverter
+
+# Internal imports
+from models import db, connect_db, Asset
+from config import BaseConfig
 from stock_tickers import TICKER_SYMBOLS
 
-# load environment variables
+# Load environment variables
 load_dotenv()
-b = BtcConverter()
 
+# Initializers
 app = Flask(__name__)
 CORS(app)
 scheduler = APScheduler()
+b = BtcConverter()
 
 app.config.from_object("config.BaseConfig")
-
 connect_db(app)
 
 #########################################################
@@ -40,20 +42,26 @@ ANNUAL = str((datetime.now() - timedelta(365)).strftime('%Y-%m-%d'))
 # Handle Data Functions
 #########################################################
 
+# * Ref: https://www.youtube.com/watch?v=DOHg16zcUCc
+# def clean_data(stock_data, col, start, end):
+#     """Cleans any missing days"""
 
-def clean_data(stock_data, col, start, end):
-    """Cleans any missing days"""
+#     weekdays = pd.date_range(start=start, end=end)
+#     clean_data = stock_data[col].reindex(weekdays)
+#     return clean_data.fillna(method='ffill')
 
-    weekdays = pd.date_range(start=start, end=end)
-    clean_data = stock_data[col].reindex(weekdays)
-    return clean_data.fillna(method='ffill')
+# ! Heroku doesn't handle empty dataframes?
+# ! Ref: https://github.com/pydata/pandas-datareader/issues/640
 
 
 def get_data(ticker, start, end):
-    """Get ticker symbol's data from yahoo finance"""
+    """Get ticker symbol's closing data from yahoo finance"""
 
     try:
+        # .DataReader() will return a dataframe
         stock_data = data.DataReader(ticker, 'yahoo', start, end)
+
+        # Get start date in dataframe
         price = stock_data["Close"][0]
         return price if price else 0
 
@@ -63,24 +71,7 @@ def get_data(ticker, start, end):
 
 
 def update_prices(ticker):
-    """
-    Returns price and price changes of ticker symbol.
-
-    get_data() will return a nested dict of the ticker symbols's dataframe.
-    Storing the tickers's ["Close"] key will give us the closing price of the stock.
-
-    ex:
-        get_data(USA_STOCK)["Close"]
-
-    will return:
-        [Timestamp('2020-05-29 00:00:00'), 2442.3701171875]
-    """
-
-    # today_price = float(get_data(ticker, TODAY, TODAY)["Close"][0])
-    # daily_price = float(get_data(ticker, DAILY, TODAY)["Close"][0])
-    # weekly_price = float(get_data(ticker, WEEKLY, TODAY)["Close"][0])
-    # monthly_price = float(get_data(ticker, MONTHLY, TODAY)["Close"][0])
-    # annual_price = float(get_data(ticker, ANNUAL, TODAY)["Close"][0])
+    """Updates DB of price and price changes of ticker symbol."""
 
     today_price = float(get_data(ticker, TODAY, TODAY))
     daily_price = float(get_data(ticker, DAILY, TODAY))
