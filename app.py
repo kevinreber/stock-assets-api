@@ -33,7 +33,7 @@ connect_db(app)
 TODAY = str(datetime.now().strftime('%Y-%m-%d'))
 DAILY = str((datetime.now() - timedelta(2)).strftime('%Y-%m-%d'))
 WEEKLY = str((datetime.now() - timedelta(7)).strftime('%Y-%m-%d'))
-MONTHLY = str((datetime.now() - timedelta(28)).strftime('%Y-%m-%d'))
+MONTHLY = str((datetime.now() - timedelta(30)).strftime('%Y-%m-%d'))
 ANNUAL = str((datetime.now() - timedelta(365)).strftime('%Y-%m-%d'))
 
 #########################################################
@@ -145,10 +145,10 @@ def serialize(asset):
 
 def update_db():
     """Updates all tickers"""
-    update_crypto('BTC')
 
     for t in TICKER_SYMBOLS:
         update_prices(t)
+    update_crypto('BTC')
 
     print("Finished updating assets")
 
