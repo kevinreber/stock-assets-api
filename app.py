@@ -4,7 +4,7 @@ from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
 from dotenv import load_dotenv
 from flask_cors import CORS
-import pandas
+import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from config import BaseConfig
@@ -13,6 +13,7 @@ import schedule
 import time
 import json
 from forex_python.bitcoin import BtcConverter
+from stock_tickers import TICKER_SYMBOLS
 
 # load environment variables
 load_dotenv()
@@ -35,33 +36,17 @@ WEEKLY = str((datetime.now() - timedelta(7)).strftime('%Y-%m-%d'))
 MONTHLY = str((datetime.now() - timedelta(30)).strftime('%Y-%m-%d'))
 ANNUAL = str((datetime.now() - timedelta(365)).strftime('%Y-%m-%d'))
 
-# TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND", "TSLA"]
-TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS", "BYND"]
-
-
 #########################################################
 # Handle Data Functions
 #########################################################
 
-def get_stock(ticker):
-    """Get stock from DB"""
 
-    stock = Asset.query.get(ticker)
+def clean_data(stock_data, col, start, end):
+    """Cleans any missing days"""
 
-    changes = {
-        "daily": stock.daily_perc_change,
-        "weekly": stock.weekly_perc_change,
-        "monthly": stock.monthly_perc_change,
-        "annual": stock.annual_perc_change
-    }
-
-    price_data = {
-        "price": stock.price,
-        "dailyPriceChange": stock.daily_price_change,
-        "priceChangePercentages": changes
-    }
-
-    return price_data
+    weekdays = pd.date_range(start=start, end=end)
+    clean_data = stock_data[col].reindex(weekdays)
+    return clean_data.fillna(method='ffill')
 
 
 def get_data(ticker, start, end):
@@ -69,7 +54,6 @@ def get_data(ticker, start, end):
 
     try:
         stock_data = data.DataReader(ticker, 'yahoo', start, end)
-
         return stock_data
 
     except RemoteDataError:
@@ -90,17 +74,17 @@ def update_prices(ticker):
         [Timestamp('2020-05-29 00:00:00'), 2442.3701171875]
     """
 
-    today_price = get_data(ticker, TODAY, TODAY)["Close"][0]
-    daily_price = get_data(ticker, DAILY, TODAY)["Close"][0]
-    weekly_price = get_data(ticker, WEEKLY, TODAY)["Close"][0]
-    monthly_price = get_data(ticker, MONTHLY, TODAY)["Close"][0]
-    annual_price = get_data(ticker, ANNUAL, TODAY)["Close"][0]
+    today_price = float(get_data(ticker, TODAY, TODAY)["Close"][0])
+    daily_price = float(get_data(ticker, DAILY, TODAY)["Close"][0])
+    weekly_price = float(get_data(ticker, WEEKLY, TODAY)["Close"][0])
+    monthly_price = float(get_data(ticker, MONTHLY, TODAY)["Close"][0])
+    annual_price = float(get_data(ticker, ANNUAL, TODAY)["Close"][0])
 
     stock = Asset.query.get(ticker)
 
     if stock:
         stock.price = today_price
-        stock.daily_price_change = float(today_price - daily_price)
+        stock.daily_price_change = today_price - daily_price
         stock.daily_perc_change = percent_change(today_price, daily_price)
         stock.weekly_perc_change = percent_change(today_price, weekly_price)
         stock.monthly_perc_change = percent_change(today_price, monthly_price)
@@ -134,15 +118,6 @@ def percent_change(current, start):
     return ((float(current)-start) / abs(start)) * 100
 
 
-def update_db():
-    """Updates all tickers"""
-    update_crypto('BTC')
-
-    for t in TICKER_SYMBOLS:
-        update_prices(t)
-    print("Finished updating assets")
-
-
 def serialize(asset):
     """Serializes data"""
 
@@ -158,6 +133,16 @@ def serialize(asset):
             'annualChange': asset.annual_perc_change
         }
     }
+
+
+def update_db():
+    """Updates all tickers"""
+
+    for t in TICKER_SYMBOLS:
+        update_prices(t)
+    update_crypto('BTC')
+
+    print("Finished updating assets")
 
 
 #########################################################
