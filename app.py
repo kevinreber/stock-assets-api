@@ -38,36 +38,55 @@ WEEKLY = str((datetime.now() - timedelta(7)).strftime('%Y-%m-%d'))
 MONTHLY = str((datetime.now() - timedelta(30)).strftime('%Y-%m-%d'))
 ANNUAL = str((datetime.now() - timedelta(365)).strftime('%Y-%m-%d'))
 
+
 #########################################################
 # Handle Data Functions
 #########################################################
 
 # * Ref: https://www.youtube.com/watch?v=DOHg16zcUCc
-# def clean_data(stock_data, col, start, end):
-#     """Cleans any missing days"""
 
-#     weekdays = pd.date_range(start=start, end=end)
-#     clean_data = stock_data[col].reindex(weekdays)
-#     return clean_data.fillna(method='ffill')
+
+# def clean_data(data, col, start_date, end_date):
+def clean_data(ticker, col, start_date, end_date):
+    """Cleans any missing days of the specified time frame"""
+
+    print(f"cleaning....{start_date} and ${end_date}")
+    weekdays = data.DataReader(ticker, 'yahoo', start_date, end_date)
+    print(weekdays)
+    print("done cleaning..")
+    return weekdays.fillna(method='ffill')
+
 
 # ! Heroku doesn't handle empty dataframes?
 # ! Ref: https://github.com/pydata/pandas-datareader/issues/640
 
 
 def get_data(ticker, start, end):
-    """Get ticker symbol's closing data from yahoo finance"""
+    """Get ticker symbol's closing data from yahoo finance.
+
+    If a date is missing price data, a KeyError will be thrown and 
+    a FALL_BACK_DATE will handle the error and find the most recent 
+    price data in the stock market.
+    """
+
+    FALL_BACK_DATE = str((datetime.now() - timedelta(5)).strftime('%Y-%m-%d'))
 
     try:
         # .DataReader() will return a dataframe
         stock_data = data.DataReader(ticker, 'yahoo', start, end)
-
-        # Get start date in dataframe
         price = stock_data["Close"][0]
-        return price if price else 0
+
+    except KeyError:
+        print(f"Getting {ticker}'s' most recent price...")
+        clean = clean_data(ticker, 'Close', FALL_BACK_DATE, end)
+        print("most recent price is...")
+        print(clean.tail(1)["Close"][0])
+        price = clean.tail(1)["Close"][0]
 
     except RemoteDataError:
-        # print("No data found for {t}".format(t=ticker))
-        pass
+        print("No data found for {t}".format(t=ticker))
+
+    return price
 
 
 def update_prices(ticker):
