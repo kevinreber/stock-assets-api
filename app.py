@@ -55,7 +55,7 @@ def get_data(ticker, start, end):
     try:
         stock_data = data.DataReader(ticker, 'yahoo', start, end)
         price = stock_data["Close"][0]
-        return price
+        return price if price else 0
 
     except RemoteDataError:
         # print("No data found for {t}".format(t=ticker))
@@ -76,8 +76,17 @@ def update_prices(ticker):
         [Timestamp('2020-05-29 00:00:00'), 2442.3701171875]
     """
 
+    # today_price = float(get_data(ticker, TODAY, TODAY)["Close"][0])
+    # daily_price = float(get_data(ticker, DAILY, TODAY)["Close"][0])
+    # weekly_price = float(get_data(ticker, WEEKLY, TODAY)["Close"][0])
+    # monthly_price = float(get_data(ticker, MONTHLY, TODAY)["Close"][0])
+    # annual_price = float(get_data(ticker, ANNUAL, TODAY)["Close"][0])
+
     today_price = float(get_data(ticker, TODAY, TODAY))
     daily_price = float(get_data(ticker, DAILY, TODAY))
+    weekly_price = float(get_data(ticker, WEEKLY, TODAY))
+    monthly_price = float(get_data(ticker, MONTHLY, TODAY))
+    annual_price = float(get_data(ticker, ANNUAL, TODAY))
 
     stock = Asset.query.get(ticker)
 
@@ -85,6 +94,9 @@ def update_prices(ticker):
         stock.price = today_price
         stock.daily_price_change = today_price - daily_price
         stock.daily_perc_change = percent_change(today_price, daily_price)
+        stock.weekly_perc_change = percent_change(today_price, weekly_price)
+        stock.monthly_perc_change = percent_change(today_price, monthly_price)
+        stock.annual_perc_change = percent_change(today_price, annual_price)
 
     else:
         new_stock = Asset(id=ticker,
@@ -92,7 +104,12 @@ def update_prices(ticker):
                           price=today_price,
                           daily_price_change=today_price - daily_price,
                           daily_perc_change=percent_change(
-                              today_price, daily_price))
+                              today_price, daily_price),
+                          weekly_perc_change=percent_change(
+                              today_price, weekly_price),
+                          monthly_perc_change=percent_change(
+                              today_price, monthly_price),
+                          annual_perc_change=percent_change(today_price, annual_price))
         db.session.add(new_stock)
 
     db.session.commit()
