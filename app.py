@@ -43,24 +43,6 @@ ANNUAL = str((datetime.now() - timedelta(365)).strftime('%Y-%m-%d'))
 # Handle Data Functions
 #########################################################
 
-# * Ref: https://www.youtube.com/watch?v=DOHg16zcUCc
-
-
-# def clean_data(data, col, start_date, end_date):
-def clean_data(ticker, col, start_date, end_date):
-    """Cleans any missing days of the specified time frame"""
-
-    print(f"cleaning....{start_date} and ${end_date}")
-    weekdays = data.DataReader(ticker, 'yahoo', start_date, end_date)
-    print(weekdays)
-    print("done cleaning..")
-    return weekdays.fillna(method='ffill')
-
-
-# ! Heroku doesn't handle empty dataframes?
-# ! Ref: https://github.com/pydata/pandas-datareader/issues/640
-
-
 def get_data(ticker, start, end):
     """Get ticker symbol's closing data from yahoo finance.
 
@@ -129,6 +111,16 @@ def update_prices(ticker):
 #########################################################
 # Helper Functions
 #########################################################
+
+def clean_data(ticker, col, start_date, end_date):
+    """Cleans any missing days of the specified time frame"""
+
+    print(f"cleaning....{start_date} and ${end_date}")
+    weekdays = data.DataReader(ticker, 'yahoo', start_date, end_date)
+    print(weekdays)
+    print("done cleaning..")
+    return weekdays.fillna(method='ffill')
+
 
 def percent_change(current, start):
     """Returns percentage change"""
