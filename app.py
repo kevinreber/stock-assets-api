@@ -57,7 +57,8 @@ def get_data(ticker, start, end):
         return stock_data
 
     except RemoteDataError:
-        print("No data found for {t}".format(t=ticker))
+        # print("No data found for {t}".format(t=ticker))
+        pass
 
 
 def update_prices(ticker):
