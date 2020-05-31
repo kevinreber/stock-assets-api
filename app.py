@@ -54,7 +54,8 @@ def get_data(ticker, start, end):
 
     try:
         stock_data = data.DataReader(ticker, 'yahoo', start, end)
-        return stock_data
+        price = stock_data["Close"][0]
+        return price if price else 0
 
     except RemoteDataError:
         # print("No data found for {t}".format(t=ticker))
@@ -75,11 +76,17 @@ def update_prices(ticker):
         [Timestamp('2020-05-29 00:00:00'), 2442.3701171875]
     """
 
-    today_price = float(get_data(ticker, TODAY, TODAY)["Close"][0])
-    daily_price = float(get_data(ticker, DAILY, TODAY)["Close"][0])
-    weekly_price = float(get_data(ticker, WEEKLY, TODAY)["Close"][0])
-    monthly_price = float(get_data(ticker, MONTHLY, TODAY)["Close"][0])
-    annual_price = float(get_data(ticker, ANNUAL, TODAY)["Close"][0])
+    # today_price = float(get_data(ticker, TODAY, TODAY)["Close"][0])
+    # daily_price = float(get_data(ticker, DAILY, TODAY)["Close"][0])
+    # weekly_price = float(get_data(ticker, WEEKLY, TODAY)["Close"][0])
+    # monthly_price = float(get_data(ticker, MONTHLY, TODAY)["Close"][0])
+    # annual_price = float(get_data(ticker, ANNUAL, TODAY)["Close"][0])
+
+    today_price = float(get_data(ticker, TODAY, TODAY))
+    daily_price = float(get_data(ticker, DAILY, TODAY))
+    weekly_price = float(get_data(ticker, WEEKLY, TODAY))
+    monthly_price = float(get_data(ticker, MONTHLY, TODAY))
+    annual_price = float(get_data(ticker, ANNUAL, TODAY))
 
     stock = Asset.query.get(ticker)
 
