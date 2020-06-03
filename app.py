@@ -234,6 +234,6 @@ def get_assets():
 # Set schedule task to run every 30 seconds
 if __name__ == "__main__":
     scheduler.add_job(id='Scheduled task', func=update_db,
-                      trigger='interval', seconds=30)
+                      trigger='interval', seconds=40)
     scheduler.start()
     app.run()
