@@ -148,9 +148,9 @@ def serialize(asset):
 def update_db():
     """Updates all tickers"""
 
+    update_crypto('BTC')
     for t in TICKER_SYMBOLS:
         update_prices(t)
-    update_crypto('BTC')
 
     print("Finished updating assets")
 
@@ -234,6 +234,6 @@ def get_assets():
 # Set schedule task to run every 30 seconds
 if __name__ == "__main__":
     scheduler.add_job(id='Scheduled task', func=update_db,
-                      trigger='interval', seconds=40)
+                      trigger='interval', seconds=35)
     scheduler.start()
     app.run()

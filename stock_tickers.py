@@ -1,2 +1,2 @@
 TICKER_SYMBOLS = ["MSFT", "ZM", "UAL", "NFLX", "ROKU", "DIS",
-                  "BYND", "TSLA", "AAPL", "KO", "ADBE", "ADSK", "MCD", "VZ"]
+                  "BYND", "TSLA", "ADBE", "ADSK"]
