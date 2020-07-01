@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 
 # Third-party libraries
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from pandas_datareader import data
 from pandas_datareader._utils import RemoteDataError
 from dotenv import load_dotenv
@@ -209,8 +209,7 @@ def update_crypto(crypto):
 def home():
     """Home Page, keep empty"""
 
-    update_db()
-    return 'Hello World!'
+    return redirect("/assets")
 
 
 @app.route('/assets', methods=['GET'])
